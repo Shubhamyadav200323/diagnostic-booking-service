@@ -242,23 +242,23 @@ erDiagram
     }
     CentreTest {
         bigint id PK
-        fk centre_id
-        fk test_id
+        bigint centre_id FK
+        bigint test_id FK
         decimal price
         bool is_available
     }
     Booking {
         bigint id PK
-        fk user_id
-        fk centre_id
-        fk test_id
+        bigint user_id FK
+        bigint centre_id FK
+        bigint test_id FK
         datetime appointment_at
         decimal amount
         string status
     }
     Payment {
         bigint id PK
-        fk booking_id
+        bigint booking_id FK
         decimal amount
         string status
         string transaction_id UK
