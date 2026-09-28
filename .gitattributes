@@ -1,0 +1,4 @@
+# keep unix line endings for scripts that run inside the linux container,
+# otherwise a Windows checkout turns them into CRLF and the entrypoint fails
+*.sh text eol=lf
+Dockerfile text eol=lf

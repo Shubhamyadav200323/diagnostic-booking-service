@@ -10,48 +10,88 @@ Stack: **Django 5 + Django REST Framework**, **PostgreSQL**, JWT auth (simplejwt
 
 ## Running it
 
-### With Docker (easiest)
+### Option 1: Docker (recommended)
+
+Needs Docker Desktop (or Docker + compose plugin).
 
 ```bash
+git clone <repo-url>
+cd diagnostic-booking-service
 docker compose up --build
 ```
 
-This starts Postgres and the API on http://localhost:8000. On start the container runs migrations
-and loads some demo centres/tests (`seed_data`), so you can start booking right away.
+This starts Postgres and the API on http://localhost:8000. On start the container runs migrations,
+loads some demo centres/tests (`seed_data`) and creates a demo admin, so you can start right away.
 
 - Swagger UI: http://localhost:8000/api/docs/
 - OpenAPI schema: http://localhost:8000/api/schema/
-- Admin: http://localhost:8000/admin/ (create a user with `docker compose exec web python manage.py createsuperuser`)
+- Admin: http://localhost:8000/admin/ – login `admin@example.com` / `admin12345`
+  (dev-only demo account, change it via `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD`)
 
-Run tests inside the container:
+Run the full test suite (on Postgres) inside the container:
 
 ```bash
 docker compose run --rm web pytest
 ```
 
-### Without Docker
+Stop everything with `docker compose down` (add `-v` to also wipe the database).
 
-```bash
-python -m venv .venv && source .venv/bin/activate
+### Option 2: Without Docker (SQLite, quickest)
+
+Needs Python 3.11+. No database setup needed – if `DATABASE_URL` isn't set, the app uses SQLite.
+
+**Windows (PowerShell)**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-
-cp .env.example .env               # edit DATABASE_URL if needed
-export $(grep -v '^#' .env | xargs)
 
 python manage.py migrate
 python manage.py seed_data
-python manage.py createsuperuser   # optional, needed to add centres/tests via API
+python manage.py createsuperuser   # optional, for /admin/
 python manage.py runserver
 ```
 
-If `DATABASE_URL` isn't set the app falls back to SQLite. That's handy for a quick look, but
-Postgres is what it's meant to run on (row locks are used for payments/webhooks, and the
-concurrency tests only run on Postgres).
+(If PowerShell blocks the activate script, run
+`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once.)
+
+**macOS / Linux**
 
 ```bash
-pytest                                                      # sqlite
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/diagnostics pytest   # full suite
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+
+python manage.py migrate
+python manage.py seed_data
+python manage.py createsuperuser   # optional, for /admin/
+python manage.py runserver
 ```
+
+Then open http://localhost:8000/api/docs/. Tests:
+
+```bash
+pytest
+```
+
+On SQLite the 2 concurrency tests are skipped (they need Postgres row locks), everything else runs.
+
+### Option 3: Without Docker, on your own Postgres
+
+Same as option 2, but point the app at your database first:
+
+```bash
+# macOS / Linux
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/diagnostics
+```
+
+```powershell
+# Windows PowerShell
+$env:DATABASE_URL = "postgres://postgres:postgres@localhost:5432/diagnostics"
+```
+
+All settings are read from environment variables, see `.env.example` for the full list.
 
 ---
 
